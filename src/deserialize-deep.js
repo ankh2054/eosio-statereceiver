@@ -27,11 +27,19 @@ module.exports = async function deserializeDeep({ eosApi, types, type, data, opt
     const deserializedData = result[1];
 
     if (deserializedData.this_block) {
+      if (deserializedData.block) {
+        deserializedData.block = deserialize(
+          types,
+          'signed_block',
+          deserializedData.block,
+        );
+      }
+
       if (deserializeTraces) {
         deserializedData.traces = deserialize(
           types,
           'transaction_trace[]',
-          deserializedData.traces
+          deserializedData.traces,
         );
 
         if (actionSet && actionSet.size) {
@@ -41,7 +49,10 @@ module.exports = async function deserializeDeep({ eosApi, types, type, data, opt
               const action_traces = traceData.action_traces;
 
               if (action_traces && action_traces.length) {
-                for (const [actionTraceVersion, actionTraceData] of action_traces) {
+                for (const [
+                  actionTraceVersion,
+                  actionTraceData,
+                ] of action_traces) {
                   if (
                     actionTraceVersion === 'action_trace_v0' ||
                     actionTraceVersion === 'action_trace_v1'
@@ -49,7 +60,9 @@ module.exports = async function deserializeDeep({ eosApi, types, type, data, opt
                     const key = `${actionTraceData.act.account}::${actionTraceData.act.name}`;
 
                     if (actionSet.has(key) && eosApi) {
-                      const [act] = await eosApi.deserializeActions([actionTraceData.act]);
+                      const [act] = await eosApi.deserializeActions([
+                        actionTraceData.act,
+                      ]);
                       actionTraceData.act.data = act.data;
 
                       if (
@@ -60,7 +73,7 @@ module.exports = async function deserializeDeep({ eosApi, types, type, data, opt
                         actionTraceData.return_value = deserializeActionResult(
                           await eosApi.getAbi(actionTraceData.act.account),
                           actionTraceData.act.name,
-                          actionTraceData.return_value
+                          actionTraceData.return_value,
                         );
                       }
                     }

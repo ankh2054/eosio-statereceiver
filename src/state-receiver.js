@@ -49,6 +49,24 @@ class StateReceiver {
    */
   deserializerActionSet;
 
+  logger;
+
+  traceHandlers;
+
+  config;
+
+  startBlock;
+
+  endBlock;
+
+  current_block;
+
+  types;
+
+  processingMessageData = false;
+
+  abi = null;
+
   /**
    * @param {Object} config - StateReceiver configuration
    * @param {number} config.startBlock - default 0,
@@ -169,7 +187,9 @@ class StateReceiver {
         this.serializedMessageQueue.push(data);
 
         if (this.serializedMessageQueue.length >= this.config.maxQueueSize) {
-          this.logger.info(`The max queue size is reached; pause the ACK and wait for processing.`);
+          this.logger.info(
+            `The max queue size is reached; pause the ACK and wait for processing.`,
+          );
           this.pauseAck = true;
         }
 
@@ -187,7 +207,10 @@ class StateReceiver {
   receivedAbi(data) {
     this.logger.info('Receiving abi...');
     this.abi = JSON.parse(data);
-    this.types = Serialize.getTypesFromAbi(Serialize.createInitialTypes(), this.abi);
+    this.types = Serialize.getTypesFromAbi(
+      Serialize.createInitialTypes(),
+      this.abi,
+    );
 
     // ready to request blocks
     this.requestBlocks();
@@ -202,13 +225,13 @@ class StateReceiver {
       max_messages_in_flight: +this.config.maxMessagesInFlight || 5,
       have_positions: [],
       irreversible_only: true,
-      fetch_block: false,
+      fetch_block: true,
       fetch_traces: this.traceHandlers.length > 0,
       fetch_deltas: false,
     };
 
     this.logger.info(
-      `Requesting blocks, Start : ${args.start_block_num}, End : ${args.end_block_num}, Max Messages In Flight : ${args.max_messages_in_flight}`
+      `Requesting blocks, Start : ${args.start_block_num}, End : ${args.end_block_num}, Max Messages In Flight : ${args.max_messages_in_flight}`,
     );
     this.send(['get_blocks_request_v0', args]);
   }
@@ -252,7 +275,7 @@ class StateReceiver {
 
         if (this.pauseAck && serializedMessageQueue.length < 2) {
           this.logger.info(
-            `serializedMessageQueue.length is less than 2. Set pauseAck to false again.`
+            `serializedMessageQueue.length is less than 2. Set pauseAck to false again.`,
           );
           this.pauseAck = false;
           this.sendAck(1);
@@ -269,13 +292,15 @@ class StateReceiver {
         if (blockData[1] && blockData[1].this_block) {
           await this.deliverDeserializedBlock(blockData[1]);
         } else {
-          this.logger.info(`Reached the head of the chain: ${JSON.stringify(blockData)}`);
+          this.logger.info(
+            `Reached the head of the chain: ${JSON.stringify(blockData)}`,
+          );
         }
       }
 
       if (this.pauseAck) {
         this.logger.info(
-          `The pauseAck state is not cleared since unknow reason. Set pauseAck to false again.`
+          `The pauseAck state is not cleared since unknow reason. Set pauseAck to false again.`,
         );
         this.pauseAck = false;
         this.sendAck(1);
@@ -308,7 +333,7 @@ class StateReceiver {
     this.current_block = block_num;
 
     for (const handler of this.traceHandlers) {
-      await handler.processTrace(block_num, blockData.traces);
+      await handler.processTrace(block_num, blockData.traces, blockData.block);
     }
   }
 
