@@ -59,6 +59,8 @@ class StateReceiver {
 
   endBlock;
 
+  irreversible;
+
   current_block;
 
   types;
@@ -72,6 +74,7 @@ class StateReceiver {
    * @param {number} config.startBlock - default 0,
    * @param {number} config.endBlock - default 0xffffffff
    * @param {string[]} config.socketAddresses - websoket endpoint (state history node)
+   * @param {boolean} config.irreversible - no default
    * @param {EosApi} config.eosApi - EosApi object. This is for deserializing action data. If it is not provided, it will be created.
    * @param {string} config.eosEndpoint - endpoint of eos history node. This is required for deserializing action data.
    * @param {object} config.logger - default is console
@@ -93,6 +96,7 @@ class StateReceiver {
 
     this.deserializerActionSet = new Set(config.deserializerActions || []);
     this.startBlock = config.startBlock || 0;
+    this.irreversible = config.irreversible;
     this.endBlock = config.endBlock || '0xffffffff';
     this.current_block = -1;
     this.types = null;
@@ -224,7 +228,7 @@ class StateReceiver {
       end_block_num: parseInt(this.endBlock),
       max_messages_in_flight: +this.config.maxMessagesInFlight || 5,
       have_positions: [],
-      irreversible_only: true,
+      irreversible_only: this.irreversible,
       fetch_block: true,
       fetch_traces: this.traceHandlers.length > 0,
       fetch_deltas: false,
