@@ -1,21 +1,23 @@
 const StateReceiver = require('../src/state-receiver');
 
+async function testFeed(block_num, block) {
+  console.log(`-------------------------------`);
+  let producer = block.producer;
+  let block_num_lib = block_num;
+  let timestamp = block.timestamp;
+
+  console.log(producer);
+  console.log(block_num_lib);
+  console.log(timestamp);
+}
 
 const sr = new StateReceiver({
-  logger: {
-    info: (...m) => console.info(...m),
-    debug: (...m) => console.debug(...m),
-    warn: (...m) => console.warn(...m),
-    error: (...m) => console.error(...m),
-  },
-  startBlock: 228671233,
+  startBlock: 261910103,
   irreversible: true,
-  socketAddresses: [process.env.SOCKET_ADDRESS || 'ws://88.198.18.252:29876'],
-  eosEndpoint: process.env.EOS_ENDPOINT || 'http://88.198.18.252:28888',
-  deserializerActions: [
-
-  ],
-  maxQueueSize: 10,
+  socketAddresses: [process.env.SOCKET_ADDRESS || 'ws://172.16.0.86:8690'],
+  eosEndpoint: process.env.EOS_ENDPOINT || 'http://172.16.0.86:8891',
+  deserializerActions: [],
+  maxQueueSize: 100,
 });
 
 function sleep(ms) {
@@ -26,10 +28,7 @@ sr.registerTraceHandler({
   async processTrace(block_num, traces, block) {
     await sleep(1000);
 
-    //blockCount++;
-    console.log(block_num)
-    console.log(block)
-    
+    await testFeed(block_num, block);
   },
 });
 
